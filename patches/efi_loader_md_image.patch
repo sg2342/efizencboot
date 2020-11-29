@@ -1,0 +1,58 @@
+diff --git a/stand/efi/loader/conf.c b/stand/efi/loader/conf.c
+index 217372939..61258ba89 100644
+--- a/stand/efi/loader/conf.c
++++ b/stand/efi/loader/conf.c
+@@ -35,7 +35,14 @@ __FBSDID("$FreeBSD$");
+ 
+ extern struct devsw vdisk_dev;
+ 
++#ifdef MD_IMAGE_SIZE
++extern struct devsw md_dev;
++#endif
++
+ struct devsw *devsw[] = {
++#ifdef MD_IMAGE_SIZE
++	&md_dev,
++#endif
+ 	&efipart_fddev,
+ 	&efipart_cddev,
+ 	&efipart_hddev,
+diff --git a/stand/efi/loader/main.c b/stand/efi/loader/main.c
+index ad81b784c..629ff2956 100644
+--- a/stand/efi/loader/main.c
++++ b/stand/efi/loader/main.c
+@@ -296,6 +296,22 @@ probe_zfs_currdev(uint64_t guid)
+ }
+ #endif
+ 
++#ifdef MD_IMAGE_SIZE
++static bool
++probe_md_currdev()
++{
++	/* defined in md.c */
++	extern struct devsw md_dev;
++
++	char *devname;
++	struct devdesc currdev;
++	currdev.d_dev = &md_dev;
++	currdev.d_unit = 0;
++	set_currdev_devdesc(&currdev);
++	return (sanity_check_currdev());
++}
++#endif
++
+ static bool
+ try_as_currdev(pdinfo_t *hd, pdinfo_t *pp)
+ {
+@@ -569,6 +585,11 @@ find_currdev(bool do_bootmgr, bool is_last,
+ 	}
+ #endif /* EFI_ZFS_BOOT */
+ 
++#ifdef MD_IMAGE_SIZE
++	if (probe_md_currdev())
++		return 0;
++#endif
++
+ 	/*
+ 	 * Try to find the block device by its handle based on the
+ 	 * image we're booting. If we can't find a sane partition,

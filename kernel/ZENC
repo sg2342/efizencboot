@@ -1,0 +1,24 @@
+include GENERIC
+
+ident  ZENC 
+
+nooptions       INVARIANTS
+nooptions       BUF_TRACKING
+nooptions       DEADLKRES
+nooptions       FULL_BUF_TRACKING
+nooptions	COVERAGE
+nooptions	KCOV
+nooptions	MALLOC_DEBUG_MAXZONES
+nooptions	QUEUE_MACRO_DEBUG_TRASH
+
+options		ZFS
+options		ROOTDEVNAME=\"ufs:md0.uzip\"
+device		xz
+options		GEOM_UZIP
+
+options TERMINAL_KERN_ATTR=(FG_LIGHTRED|BG_BLACK)
+
+nodevice        sc
+nooptions       SC_PIXEL_MODE
+nodevice        vga
+nooptions       VESA
