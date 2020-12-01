@@ -58,7 +58,8 @@ kernel_mfs_image() {
 # build kernel with embedded mfs
 #
 kernel_build () {
-    if [ -f "$kernel_file" ] ; then
+    if [ -f "$kernel_file" ] && [ "$kernel_file" -nt "$kernel_mfs_image" ]
+    then
         printf '> kernel file "%s" exists: skip step\n' "$kernel_file"
         return 0
     fi
@@ -80,7 +81,8 @@ kernel_build () {
 #   install kernel
 #
 loader_mfs_image() {
-    if [ -f "$loader_mfs_image" ] ; then
+    if [ -f "$loader_mfs_image" ] && [ "$loader_mfs_image" -nt "$kernel_file" ]
+    then
         printf '> loader mfs image "%s" exists: skip step\n' "$loader_mfs_image"
         return 0
     fi
@@ -109,7 +111,8 @@ loader_mfs_image() {
 #   unpatch /usr/src
 #   embed mfs in built loader_lua.efi
 loader_build() {
-    if [ -f "$loader_file" ] ; then
+    if [ -f "$loader_file" ] && [ "$loader_file" -nt "$loader_mfs_image" ]
+    then
         printf '> loader file "%s" exists: skip step\n' "$loader_file"
         return 0
     fi
