@@ -10,8 +10,17 @@ case "$(kenv smbios.system.uuid | md5)" in
        exit 1;;
 esac
 
+sleep 1
+zpool import 2>/dev/null 1>/dev/null
 zpool import "$pool" || exit 2
-zfs load-key "$pool" || exit 3
 
-kenv vfs.root.mountfrom="zfs:$pool/ROOT/default"
-reboot -r
+sysctl kern.consmute=1
+printf '\033c'
+if zfs load-key "$pool" ; then
+  sysctl kern.consmute=0
+  kenv vfs.root.mountfrom="zfs:$pool/ROOT/default"
+  reboot -r
+else
+  sysctl kern.consmute=0
+  exit 3
+fi
