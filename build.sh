@@ -11,6 +11,7 @@ kern_conf_dir="$basedir"/kernel
 
 etc_rc="$basedir"/kernel_mfs/etc_rc
 loader_conf="$basedir"/loader_mfs/loader.conf
+local_lua="$basedir"/loader_mfs/local.lua
 
 loader_patch="$basedir"/patches/efi_loader_md_image.patch
 
@@ -95,6 +96,7 @@ loader_mfs_image() {
 	/boot/lua /boot/defaults /boot/device.hints
 
     cp "$loader_conf" "$scratch_d"/d/boot/
+    cp "$local_lua" "$scratch_d"/d/boot/lua/
 
     mkdir "$scratch_d"/d/boot/kernel
     cp "$kernel_file" "$scratch_d"/d/boot/kernel
