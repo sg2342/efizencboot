@@ -15,20 +15,14 @@ local function set_system_version_specific_env()
       ["drm.i915.semaphores"]           = "1",
       ["drm.i915.enable_fbc"]           = "1"
    }
-   local audio_x230 = {
-      ["hint.hdac.0.cad0.nid21.config"] = "as=1 seq=15",
-      ["hint.hdac.0.cad0.nid35.config"] = "as=2",
-      ["hint.hdac.0.cad0.nid18.config"] = "as=2 seq=15"
-   }
    local env = {}
 
    local v = loader.getenv("smbios.system.version") or "no"
 
    if     v == "ThinkPad T14 Gen 1" then
       env = { common, { ["hw.vmm.amdvi.enable"] = "1" } }
-   elseif v == "ThinkPad X230"      then
-      env = { common, drm_i915, audio_x230 }
    elseif v == "ThinkPad W541"
+       or v == "ThinkPad X230"
        or v == "ThinkPad T410s"     then
       env = { common, drm_i915 }
    end
