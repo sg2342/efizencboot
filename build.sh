@@ -5,8 +5,7 @@ basedir=$(dirname "$(realpath "$0")")
 
 usr_src=${usr_src:-"/usr/src"}
 base_pkgs=${base_pkgs:-"/usr/obj/usr/src/repo/FreeBSD:13:amd64/latest/"}
-
-_build="$basedir"/_build
+_build=${_build:-"$basedir"/_build}
 
 src_env_conf="$basedir"/src-env.conf
 kern_conf_dir="$basedir"/kernel
