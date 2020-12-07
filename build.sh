@@ -1,7 +1,8 @@
 #!/bin/sh -e
 #
 
-FreeBSD_usr_src=${FreeBSD_usr_src:-/usr/src}
+FreeBSD_usr_src=${FreeBSD_usr_src:-"/usr/src"}
+FreeBSD_basepkgs=${FreeBSD_basepkgs:-"/usr/obj/usr/src/repo/FreeBSD:13:amd64/latest/"}
 
 basedir=$(dirname "$(realpath "$0")")
 obj_dir_pfx="$basedir"/_build
@@ -40,9 +41,15 @@ kernel_mfs_image() {
     scratch_d="$obj_dir_pfx"/scratch
     mkdir -p "$scratch_d"/d "$scratch_d"/p
 
-    pkg create -o "$scratch_d" -f tar FreeBSD-rescue
-    PKG_DBDIR="$scratch_d"/p \
-	     pkg -r "$scratch_d"/d add -M "$scratch_d"/FreeBSD-rescue*.tar
+    rescue_pkg="$(find "$FreeBSD_basepkgs" -name FreeBSD-rescue\*.txz -print |
+                  sort | tail -1)"
+    if [ -z "$rescue_pkg" ]; then
+	pkg create -o "$scratch_d" -f tar FreeBSD-rescue
+    else
+	cp "$rescue_pkg" "$scratch_d"
+    fi
+
+    PKG_DBDIR="$scratch_d"/p pkg -r "$scratch_d"/d add -M "$scratch_d"/FreeBSD-rescue*
 
     mkdir "$scratch_d"/d/dev \
           "$scratch_d"/d/mnt \
@@ -93,8 +100,15 @@ loader_mfs_image() {
     scratch_d="$obj_dir_pfx"/scratch
     mkdir -p "$scratch_d"/d
 
-    pkg create -o "$scratch_d" -f tar FreeBSD-bootloader
-    tar -C "$scratch_d"/d -xf "$scratch_d"/FreeBSD-bootloader*.tar \
+    loader_pkg="$(find "$FreeBSD_basepkgs" -name FreeBSD-bootloader\*.txz -print |
+                  sort | tail -1)"
+    if [ -z "$loader_pkg" ]; then
+	pkg create -o "$scratch_d" -f tar FreeBSD-bootloader
+    else
+	cp "$loader_pkg" "$scratch_d"
+    fi
+
+    tar -C "$scratch_d"/d -xf "$scratch_d"/FreeBSD-bootloader* \
 	/boot/lua /boot/defaults /boot/device.hints
 
     cp "$loader_conf" "$scratch_d"/d/boot/
