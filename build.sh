@@ -22,7 +22,7 @@ loader_mfs_image="$_build"/bootfs.img
 loader_file="$_build"/BOOTX64.efi
 
 export SRCCONF="$basedir"/src.conf
-export MAKEOBJDIRPREFIX="$_build"
+export MAKEOBJDIRPREFIX="$_build"/obj_dir_pfx
 
 ncpu=$(sysctl -n hw.ncpu)
 kldload filemon || true
@@ -82,9 +82,10 @@ kernel_build () {
         make -s -j"$ncpu" -C "$usr_src"  SRC_ENV_CONF="$src_env_conf" \
 	buildkernel
 
-    cp "$_build"/"$usr_src"/amd64.amd64/sys/ZENC/kernel "$kernel_file"
+    cp "$MAKEOBJDIRPREFIX"/"$usr_src"/amd64.amd64/sys/ZENC/kernel \
+       "$kernel_file"
 
-    rm -rf "${_build:?}"/usr
+    rm -rf "$MAKEOBJDIRPREFIX"
 }
 
 ##############################################################################
@@ -147,12 +148,12 @@ loader_build() {
 
     git -C "$usr_src" restore stand/efi/loader
 
-    cp "$_build"/"$usr_src"/amd64.amd64/stand/efi/loader_lua/loader_lua.efi \
+    cp "$MAKEOBJDIRPREFIX"/"$usr_src"/amd64.amd64/stand/efi/loader_lua/loader_lua.efi \
        "$loader_file"
 
     sh "$usr_src"/sys/tools/embed_mfs.sh "$loader_file" "$loader_mfs_image"
 
-    rm -rf "${_build:?}"/usr
+    rm -rf "$MAKEOBJDIRPREFIX"
 }
 
 kernel_mfs_image
