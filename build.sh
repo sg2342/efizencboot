@@ -1,15 +1,14 @@
 #!/bin/sh -e
 #
 
-FreeBSD_usr_src=${FreeBSD_usr_src:-"/usr/src"}
-FreeBSD_basepkgs=${FreeBSD_basepkgs:-"/usr/obj/usr/src/repo/FreeBSD:13:amd64/latest/"}
-
 basedir=$(dirname "$(realpath "$0")")
-obj_dir_pfx="$basedir"/_build
-export MAKEOBJDIRPREFIX="$obj_dir_pfx"
+
+usr_src=${usr_src:-"/usr/src"}
+base_pkgs=${base_pkgs:-"/usr/obj/usr/src/repo/FreeBSD:13:amd64/latest/"}
+
+_build="$basedir"/_build
 
 src_env_conf="$basedir"/src-env.conf
-export SRCCONF="$basedir"/src.conf
 kern_conf_dir="$basedir"/kernel
 
 etc_rc="$basedir"/kernel_mfs/etc_rc
@@ -18,13 +17,17 @@ local_lua="$basedir"/loader_mfs/local.lua
 
 loader_patch="$basedir"/patches/efi_loader_md_image.patch
 
-kernel_mfs_image="$obj_dir_pfx"/md0.uzip
-kernel_file="$obj_dir_pfx"/kernel
-loader_mfs_image="$obj_dir_pfx"/bootfs.img
-loader_file="$obj_dir_pfx"/BOOTX64.efi
+kernel_mfs_image="$_build"/md0.uzip
+kernel_file="$_build"/kernel
+loader_mfs_image="$_build"/bootfs.img
+loader_file="$_build"/BOOTX64.efi
+
+export SRCCONF="$basedir"/src.conf
+export MAKEOBJDIRPREFIX="$_build"
 
 ncpu=$(sysctl -n hw.ncpu)
 kldload filemon || true
+
 
 ##############################################################################
 # create mfs that will be embedded in the kernel:
@@ -38,10 +41,10 @@ kernel_mfs_image() {
         return 0
     fi
 
-    scratch_d="$obj_dir_pfx"/scratch
+    scratch_d="$_build"/scratch
     mkdir -p "$scratch_d"/d "$scratch_d"/p
 
-    rescue_pkg="$(find "$FreeBSD_basepkgs" -name FreeBSD-rescue\*.txz -print |
+    rescue_pkg="$(find "$base_pkgs" -name FreeBSD-rescue\*.txz -print |
                   sort | tail -1)"
     if [ -z "$rescue_pkg" ]; then
 	pkg create -o "$scratch_d" -f tar FreeBSD-rescue
@@ -49,7 +52,8 @@ kernel_mfs_image() {
 	cp "$rescue_pkg" "$scratch_d"
     fi
 
-    PKG_DBDIR="$scratch_d"/p pkg -r "$scratch_d"/d add -M "$scratch_d"/FreeBSD-rescue*
+    PKG_DBDIR="$scratch_d"/p pkg -r "$scratch_d"/d add \
+	     -M "$scratch_d"/FreeBSD-rescue*
 
     mkdir "$scratch_d"/d/dev \
           "$scratch_d"/d/mnt \
@@ -76,18 +80,18 @@ kernel_build () {
 
     env KERNCONFDIR="$kern_conf_dir" KERNCONF=ZENC \
         MFS_IMAGE="$kernel_mfs_image" \
-        make -s -j"$ncpu" -C "$FreeBSD_usr_src"  SRC_ENV_CONF="$src_env_conf" \
+        make -s -j"$ncpu" -C "$usr_src"  SRC_ENV_CONF="$src_env_conf" \
 	buildkernel
 
-    cp "$obj_dir_pfx"/"$FreeBSD_usr_src"/amd64.amd64/sys/ZENC/kernel "$kernel_file"
+    cp "$_build"/"$usr_src"/amd64.amd64/sys/ZENC/kernel "$kernel_file"
 
-    rm -rf "${obj_dir_pfx:?}"/usr
+    rm -rf "${_build:?}"/usr
 }
 
 ##############################################################################
 # create mfs that will be embedded in the loader:
 #   use lua code and default config from FreeBSD-bootloader pkg
-#   install loader.conf
+#   install loader.conf and local.lua
 #   install kernel
 #
 loader_mfs_image() {
@@ -97,10 +101,10 @@ loader_mfs_image() {
         return 0
     fi
 
-    scratch_d="$obj_dir_pfx"/scratch
+    scratch_d="$_build"/scratch
     mkdir -p "$scratch_d"/d
 
-    loader_pkg="$(find "$FreeBSD_basepkgs" -name FreeBSD-bootloader\*.txz -print |
+    loader_pkg="$(find "$base_pkgs" -name FreeBSD-bootloader\*.txz -print |
                   sort | tail -1)"
     if [ -z "$loader_pkg" ]; then
 	pkg create -o "$scratch_d" -f tar FreeBSD-bootloader
@@ -124,9 +128,9 @@ loader_mfs_image() {
 
 ##############################################################################
 # build EFI loader with embedded mfs image:
-#   patch $FreeBSD_usr_src (https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=235806)
+#   patch $usr_src (https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=235806)
 #   build loader_lua.efi
-#   unpatch $FreeBSD_usr_src
+#   unpatch $usr_src
 #   embed mfs in built loader_lua.efi
 loader_build() {
     if [ -f "$loader_file" ] && [ "$loader_file" -nt "$loader_mfs_image" ]
@@ -134,22 +138,22 @@ loader_build() {
         printf '> loader file "%s" exists: skip step\n' "$loader_file"
         return 0
     fi
-    git -C "$FreeBSD_usr_src" apply "$loader_patch"
+    git -C "$usr_src" apply "$loader_patch"
 
     md_size=$(($(stat -f "%z" "$loader_mfs_image") + 512))
 
-    make -s -j"$ncpu" -C "$FreeBSD_usr_src"/stand/ \
-	 SRC_ENV_CONF="$src_env_conf"  MD_IMAGE_SIZE="$md_size" \
-	MK_FORTH=no MK_LOADER_UBOOT=no MK_LOADER_OFW=no MK_FDT=no
+    make -s -j"$ncpu" -C "$usr_src"/stand/ \
+	 SRC_ENV_CONF="$src_env_conf" MD_IMAGE_SIZE="$md_size" \
+	 MK_FORTH=no MK_LOADER_UBOOT=no MK_LOADER_OFW=no MK_FDT=no
 
-    git -C "$FreeBSD_usr_src" restore stand/efi/loader
+    git -C "$usr_src" restore stand/efi/loader
 
-    cp "$obj_dir_pfx"/"$FreeBSD_usr_src"/amd64.amd64/stand/efi/loader_lua/loader_lua.efi \
+    cp "$_build"/"$usr_src"/amd64.amd64/stand/efi/loader_lua/loader_lua.efi \
        "$loader_file"
 
-    sh "$FreeBSD_usr_src"/sys/tools/embed_mfs.sh "$loader_file" "$loader_mfs_image"
+    sh "$usr_src"/sys/tools/embed_mfs.sh "$loader_file" "$loader_mfs_image"
 
-    rm -rf "${obj_dir_pfx:?}"/usr
+    rm -rf "${_build:?}"/usr
 }
 
 kernel_mfs_image
