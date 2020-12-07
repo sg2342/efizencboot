@@ -1,6 +1,8 @@
 #!/bin/sh -e
 #
 
+FreeBSD_usr_src=${FreeBSD_usr_src:-/usr/src}
+
 basedir=$(dirname "$(realpath "$0")")
 obj_dir_pfx="$basedir"/_build
 export MAKEOBJDIRPREFIX="$obj_dir_pfx"
@@ -67,10 +69,10 @@ kernel_build () {
 
     env KERNCONFDIR="$kern_conf_dir" KERNCONF=ZENC \
         MFS_IMAGE="$kernel_mfs_image" \
-        make -s -j"$ncpu" -C /usr/src  SRC_ENV_CONF="$src_env_conf" \
+        make -s -j"$ncpu" -C "$FreeBSD_usr_src"  SRC_ENV_CONF="$src_env_conf" \
 	buildkernel
 
-    cp "$obj_dir_pfx"/usr/src/amd64.amd64/sys/ZENC/kernel "$kernel_file"
+    cp "$obj_dir_pfx"/"$FreeBSD_usr_src"/amd64.amd64/sys/ZENC/kernel "$kernel_file"
 
     rm -rf "${obj_dir_pfx:?}"/usr
 }
@@ -108,9 +110,9 @@ loader_mfs_image() {
 
 ##############################################################################
 # build EFI loader with embedded mfs image:
-#   patch /usr/src (https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=235806)
+#   patch $FreeBSD_usr_src (https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=235806)
 #   build loader_lua.efi
-#   unpatch /usr/src
+#   unpatch $FreeBSD_usr_src
 #   embed mfs in built loader_lua.efi
 loader_build() {
     if [ -f "$loader_file" ] && [ "$loader_file" -nt "$loader_mfs_image" ]
@@ -118,20 +120,20 @@ loader_build() {
         printf '> loader file "%s" exists: skip step\n' "$loader_file"
         return 0
     fi
-    git -C /usr/src apply "$loader_patch"
+    git -C "$FreeBSD_usr_src" apply "$loader_patch"
 
     md_size=$(($(stat -f "%z" "$loader_mfs_image") + 512))
 
-    make -s -j"$ncpu" -C /usr/src/stand/ \
+    make -s -j"$ncpu" -C "$FreeBSD_usr_src"/stand/ \
 	 SRC_ENV_CONF="$src_env_conf"  MD_IMAGE_SIZE="$md_size" \
 	MK_FORTH=no MK_LOADER_UBOOT=no MK_LOADER_OFW=no MK_FDT=no
 
-    git -C /usr/src restore stand/efi/loader
+    git -C "$FreeBSD_usr_src" restore stand/efi/loader
 
-    cp "$obj_dir_pfx"/usr/src/amd64.amd64/stand/efi/loader_lua/loader_lua.efi \
+    cp "$obj_dir_pfx"/"$FreeBSD_usr_src"/amd64.amd64/stand/efi/loader_lua/loader_lua.efi \
        "$loader_file"
 
-    sh /usr/src/sys/tools/embed_mfs.sh "$loader_file" "$loader_mfs_image"
+    sh "$FreeBSD_usr_src"/sys/tools/embed_mfs.sh "$loader_file" "$loader_mfs_image"
 
     rm -rf "${obj_dir_pfx:?}"/usr
 }
