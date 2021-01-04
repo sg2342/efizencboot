@@ -113,7 +113,7 @@ loader_mfs_image() {
     fi
 
     tar -C "$scratch_d"/d -xf "$scratch_d"/FreeBSD-bootloader* \
-	/boot/lua /boot/defaults /boot/device.hints
+	/boot/lua /boot/defaults /boot/device.hints /boot/loader.conf.d
 
     cp "$loader_conf" "$scratch_d"/d/boot/
     cp "$local_lua" "$scratch_d"/d/boot/lua/
