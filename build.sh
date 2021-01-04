@@ -144,7 +144,7 @@ loader_build() {
 
     make -s -j"$ncpu" -C "$usr_src"/stand/ \
 	 SRC_ENV_CONF="$src_env_conf" MD_IMAGE_SIZE="$md_size" \
-	 MK_FORTH=no MK_LOADER_UBOOT=no MK_LOADER_OFW=no MK_FDT=no
+	 MK_FORTH=no MK_LOADER_UBOOT=no MK_LOADER_OFW=no
 
     git -C "$usr_src" restore stand/efi/loader
 
