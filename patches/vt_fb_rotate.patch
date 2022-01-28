@@ -1,0 +1,72 @@
+diff --git a/sys/dev/vt/hw/fb/vt_fb.c b/sys/dev/vt/hw/fb/vt_fb.c
+index c535d1b753c..19ab5999d89 100644
+--- a/sys/dev/vt/hw/fb/vt_fb.c
++++ b/sys/dev/vt/hw/fb/vt_fb.c
+@@ -45,6 +45,8 @@ __FBSDID("$FreeBSD$");
+ #include <vm/vm.h>
+ #include <vm/pmap.h>
+ 
++#define FB_FLAG_ROTATE 2147483648
++
+ static struct vt_driver vt_fb_driver = {
+ 	.vd_name = "fb",
+ 	.vd_init = vt_fb_init,
+@@ -167,7 +169,13 @@ vt_fb_setpixel(struct vt_device *vd, int x, int y, term_color_t color)
+ 
+ 	info = vd->vd_softc;
+ 	c = info->fb_cmap[color];
+-	o = info->fb_stride * y + x * FBTYPE_GET_BYTESPP(info);
++
++	if (info->fb_flags & FB_FLAG_ROTATE) {
++		o = info->fb_stride * x +
++		    (info->fb_width - (y + 1)) * FBTYPE_GET_BYTESPP(info);
++	} else {
++		o = info->fb_stride * y + x * FBTYPE_GET_BYTESPP(info);
++	}
+ 
+ 	if (info->fb_flags & FB_FLAG_NOWRITE)
+ 		return;
+@@ -300,7 +308,13 @@ vt_fb_bitblt_bitmap(struct vt_device *vd, const struct vt_window *vw,
+ 			/* Skip pixel write, if mask bit not set. */
+ 			if (mask != NULL && (mask[byte] & bit) == 0)
+ 				continue;
+-			o = (y + yi) * info->fb_stride + (x + xi) * bpp;
++			if (info->fb_flags & FB_FLAG_ROTATE) {
++				o = (x + xi) * info->fb_stride +
++				    (info->fb_width - (y + yi + 1)) * bpp;
++			} else {
++				o = (y + yi) * info->fb_stride + (x + xi) * bpp;
++			}
++
+ 			o += vd->vd_transpose;
+ 			cc = pattern[byte] & bit ? fgc : bgc;
+ 
+@@ -464,12 +478,22 @@ vt_fb_init(struct vt_device *vd)
+ 	term_color_t c;
+ 
+ 	info = vd->vd_softc;
+-	vd->vd_height = MIN(VT_FB_MAX_HEIGHT, info->fb_height);
+-	margin = (info->fb_height - vd->vd_height) >> 1;
+-	vd->vd_transpose = margin * info->fb_stride;
+-	vd->vd_width = MIN(VT_FB_MAX_WIDTH, info->fb_width);
+-	margin = (info->fb_width - vd->vd_width) >> 1;
+-	vd->vd_transpose += margin * (info->fb_bpp / NBBY);
++	if (info->fb_height > info->fb_width) { /*assume 90 degrees clockwise rotation*/
++		info->fb_flags |= FB_FLAG_ROTATE;
++		vd->vd_height = MIN(VT_FB_MAX_HEIGHT, info->fb_width);
++		vd->vd_width = MIN(VT_FB_MAX_WIDTH, info->fb_height);
++		margin = (info->fb_height - vd->vd_width) >> 1;
++		vd->vd_transpose = margin * info->fb_stride;
++		margin = (info->fb_width - vd->vd_height) >> 1;
++		vd->vd_transpose += margin * (info->fb_bpp / NBBY);
++	} else {
++		vd->vd_height = MIN(VT_FB_MAX_HEIGHT, info->fb_height);
++		margin = (info->fb_height - vd->vd_height) >> 1;
++		vd->vd_transpose = margin * info->fb_stride;
++		vd->vd_width = MIN(VT_FB_MAX_WIDTH, info->fb_width);
++		margin = (info->fb_width - vd->vd_width) >> 1;
++		vd->vd_transpose += margin * (info->fb_bpp / NBBY);
++	}
+ 	vd->vd_video_dev = info->fb_video_dev;
+ 
+ 	if (info->fb_size == 0)

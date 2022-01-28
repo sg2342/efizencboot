@@ -16,6 +16,8 @@ local_lua="$basedir"/loader_mfs/local.lua
 
 loader_patch="$basedir"/patches/efi_loader_md_image.patch
 
+vt_fb_rotate_patch="$basedir"/patches/vt_fb_rotate.patch
+
 kernel_mfs_image="$_build"/md0.uzip
 kernel_file="$_build"/kernel
 loader_mfs_image="$_build"/bootfs.img
@@ -68,7 +70,7 @@ kernel_mfs_image() {
 }
 
 ##############################################################################
-# build kernel with embedded mfs
+# build kernel with embedded mfs and patched vt_fb
 #
 kernel_build () {
     if [ -f "$kernel_file" ] && [ "$kernel_file" -nt "$kernel_mfs_image" ]
@@ -77,10 +79,14 @@ kernel_build () {
         return 0
     fi
 
+    git -C "$usr_src" apply "$vt_fb_rotate_patch"
+
     env KERNCONFDIR="$kern_conf_dir" KERNCONF=ZENC \
         MFS_IMAGE="$kernel_mfs_image" \
         make -s -j"$ncpu" -C "$usr_src"  SRC_ENV_CONF="$src_env_conf" \
 	buildkernel
+
+    git -C "$usr_src" restore sys/dev/vt/hw/fb
 
     cp "$MAKEOBJDIRPREFIX"/"$usr_src"/amd64.amd64/sys/ZENC/kernel \
        "$kernel_file"
