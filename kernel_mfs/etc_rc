@@ -6,6 +6,7 @@ case "$(kenv smbios.system.uuid | md5)" in
     63264a5209271964ed6bd99ec2e4ba3e) pool=ptha;;
     4ab4f280ef5796cd65a8c7c018b675b3) pool=sahu;;
     76544a1889e3f70dc3ba9843de136bde) pool=seth;;
+    610a00e71da3cc436c0b53d19cc8776c) pool=hapi;;
     *) printf '\n\nunknown system... you are on your own from here\n\n'
        exit 1;;
 esac
