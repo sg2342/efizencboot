@@ -146,7 +146,7 @@ loader_build() {
 	 SRC_ENV_CONF="$src_env_conf" MD_IMAGE_SIZE="$md_size" \
 	 MK_FORTH=no MK_LOADER_UBOOT=no MK_LOADER_OFW=no
 
-    git -C "$usr_src" restore stand/efi/loader
+    git -C "$usr_src" restore stand/efi/loader stand/libsa/Makefile
 
     cp "$MAKEOBJDIRPREFIX"/"$usr_src"/amd64.amd64/stand/efi/loader_lua/loader_lua.efi \
        "$loader_file"

@@ -1,5 +1,5 @@
 diff --git a/stand/efi/loader/conf.c b/stand/efi/loader/conf.c
-index 217372939685..61258ba89588 100644
+index 21737293968..61258ba8958 100644
 --- a/stand/efi/loader/conf.c
 +++ b/stand/efi/loader/conf.c
 @@ -35,7 +35,14 @@ __FBSDID("$FreeBSD$");
@@ -18,10 +18,10 @@ index 217372939685..61258ba89588 100644
  	&efipart_cddev,
  	&efipart_hddev,
 diff --git a/stand/efi/loader/main.c b/stand/efi/loader/main.c
-index ca41cd4a2610..857c3b057ba3 100644
+index ee55366e0c4..9679c0025e8 100644
 --- a/stand/efi/loader/main.c
 +++ b/stand/efi/loader/main.c
-@@ -296,6 +296,22 @@ probe_zfs_currdev(uint64_t guid)
+@@ -293,6 +293,22 @@ probe_zfs_currdev(uint64_t guid)
  }
  #endif
  
@@ -56,3 +56,15 @@ index ca41cd4a2610..857c3b057ba3 100644
  	/*
  	 * Try to find the block device by its handle based on the
  	 * image we're booting. If we can't find a sane partition,
+diff --git a/stand/libsa/Makefile b/stand/libsa/Makefile
+index 6ac1d900104..e0ff51511d2 100644
+--- a/stand/libsa/Makefile
++++ b/stand/libsa/Makefile
+@@ -91,6 +91,7 @@ SRCS+=	_setjmp.S
+ .PATH: ${SRCTOP}/contrib/bzip2
+ CFLAGS+= -DBZ_NO_STDIO -DBZ_NO_COMPRESS
+ 
++CFLAGS+= -I${BOOTSRC}/common
+ SRCS+=bzlib.c crctable.c decompress.c huffman.c randtable.c
+ 
+ # decompression functionality from zlib
