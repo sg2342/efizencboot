@@ -14,7 +14,7 @@ the root file system to the encrypted pool (using `reboot -r`).
 
 # Prerequisites
 
-- FreeBSD 13.0-CURRENT
+- FreeBSD 13-STABLE
 - git repo with FreeBSD source tree
 - PkgBase (see https://wiki.freebsd.org/PkgBase)
 
