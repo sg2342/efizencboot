@@ -14,8 +14,6 @@ etc_rc="$basedir"/kernel_mfs/etc_rc
 loader_conf="$basedir"/loader_mfs/loader.conf
 local_lua="$basedir"/loader_mfs/local.lua
 
-loader_patch="$basedir"/patches/efi_loader_md_image.patch
-
 vt_fb_rotate_patch="$basedir"/patches/vt_fb_rotate.patch
 
 kernel_mfs_image="$_build"/md0.uzip
@@ -134,9 +132,7 @@ loader_mfs_image() {
 
 ##############################################################################
 # build EFI loader with embedded mfs image:
-#   patch $usr_src (https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=235806)
 #   build loader_lua.efi
-#   unpatch $usr_src
 #   embed mfs in built loader_lua.efi
 loader_build() {
     if [ -f "$loader_file" ] && [ "$loader_file" -nt "$loader_mfs_image" ]
@@ -144,15 +140,12 @@ loader_build() {
         printf '> loader file "%s" exists: skip step\n' "$loader_file"
         return 0
     fi
-    git -C "$usr_src" apply "$loader_patch"
 
     md_size=$(($(stat -f "%z" "$loader_mfs_image") + 512))
 
     make -s -j"$ncpu" -C "$usr_src"/stand/ \
 	 SRC_ENV_CONF="$src_env_conf" MD_IMAGE_SIZE="$md_size" \
 	 MK_FORTH=no MK_LOADER_UBOOT=no MK_LOADER_OFW=no
-
-    git -C "$usr_src" restore stand/efi/loader stand/libsa/Makefile
 
     cp "$MAKEOBJDIRPREFIX"/"$usr_src"/amd64.amd64/stand/efi/loader_lua/loader_lua.efi \
        "$loader_file"
