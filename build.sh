@@ -43,7 +43,7 @@ kernel_mfs_image() {
     scratch_d="$_build"/scratch
     mkdir -p "$scratch_d"/d "$scratch_d"/p
 
-    rescue_pkg="$(find "$base_pkgs" -name FreeBSD-rescue\*.txz -print |
+    rescue_pkg="$(find "$base_pkgs" -name FreeBSD-rescue\*.pkg -print |
                   sort | tail -1)"
     if [ -z "$rescue_pkg" ]; then
 	pkg create -o "$scratch_d" -f tar FreeBSD-rescue
@@ -108,7 +108,7 @@ loader_mfs_image() {
     scratch_d="$_build"/scratch
     mkdir -p "$scratch_d"/d
 
-    loader_pkg="$(find "$base_pkgs" -name FreeBSD-bootloader\*.txz -print |
+    loader_pkg="$(find "$base_pkgs" -name FreeBSD-bootloader\*.pkg -print |
                   sort | tail -1)"
     if [ -z "$loader_pkg" ]; then
 	pkg create -o "$scratch_d" -f tar FreeBSD-bootloader
