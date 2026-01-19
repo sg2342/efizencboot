@@ -4,7 +4,7 @@
 basedir=$(dirname "$(realpath "$0")")
 
 usr_src=${usr_src:-"/usr/src"}
-base_pkgs=${base_pkgs:-"/usr/obj/usr/src/repo/FreeBSD:13:amd64/latest/"}
+base_pkgs=${base_pkgs:-"/usr/obj/usr/src/repo/FreeBSD:15:amd64/latest/"}
 _build=${_build:-"$basedir"/_build}
 
 src_env_conf="$basedir"/src-env.conf
@@ -94,7 +94,7 @@ kernel_build () {
 
 ##############################################################################
 # create mfs that will be embedded in the loader:
-#   use lua code and default config from FreeBSD-bootloader pkg
+#   use lua code and default config from FreeBSD-bootloader-15 pkg
 #   install loader.conf and local.lua
 #   install kernel
 #
@@ -108,7 +108,7 @@ loader_mfs_image() {
     scratch_d="$_build"/scratch
     mkdir -p "$scratch_d"/d
 
-    loader_pkg="$(find "$base_pkgs" -name FreeBSD-bootloader\*.pkg -print |
+    loader_pkg="$(find "$base_pkgs" -name FreeBSD-bootloader-15\*.pkg -print |
                   sort | tail -1)"
     if [ -z "$loader_pkg" ]; then
 	pkg create -o "$scratch_d" -f tar FreeBSD-bootloader
@@ -157,5 +157,7 @@ loader_build() {
 
 kernel_mfs_image
 kernel_build
+echo loader_mfs_image
 loader_mfs_image
+echo loader_build
 loader_build
